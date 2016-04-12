@@ -41,7 +41,7 @@ public class ps2
 	}//end constructor
 
 
-	public void generatePlausibility(String ciphertext, char [] key)
+	public double generatePlausibility(String ciphertext, char [] key)
 	{
 		double plausibility = 0.00;
 		double p = 0.00;
@@ -98,13 +98,15 @@ public class ps2
                         	}
 
 				plausibility += Math.log(p);
-				System.out.println("Plausiblity is now: " + plausibility);
+				//System.out.println("Plausiblity is now: " + plausibility);
 			}//end  for(cip...
 			
 		}//end try
 		catch(FileNotFoundException e){
 			System.out.println("File not found: " + e);
 		}//end catch
+		
+		return plausibility;
 	}//end generatePlausibility
 
 
@@ -112,13 +114,42 @@ public class ps2
 	//Take f* if plausibility is greater than f and if not flip random coin
 	public void runDiaconis(int iteration)
 	{
-		char [] f* = new char [27];
-		System.arraycopy(f, 0, f*, 0);
+		char [] f_star = new char [27];
+		System.arraycopy(f, 0, f_star, 0, 27);
 		Random chooseSwap = new Random();
-		int swap = chooseSwap.nextInt(f.length()) + 1;
-		int swap2 = chooseSwap.nextInt(f.length()) + 1;
+		int swap = chooseSwap.nextInt(f_star.length) + 1;
+		int swap2 = chooseSwap.nextInt(f_star.length) + 1;
 		//For next time, implement swapping and generate plausibility
+
+		char temp = f_star[swap];
+		f_star[swap] = f_star[swap2];
+		f_star[swap2] = temp;
+		System.out.println("Switched " + swap + " with " + swap2);
+
+		double f1 = generatePlausibility("cipher.txt", f_star);
+		double f2 = generatePlausibility("cipher.txt", f);
+		
+		//if Pl(f*) is better than original Pl(f), then take the f*
+		//else flip biased coin based on Pl(f*)/Pl(f) ratio to decide whether to take f* or f
+		if (f1 > f2)
+		{
+			temp = f[swap];
+			f[swap] = f[swap2];
+			f[swap2] = temp; 
+		}
+
+		//Flip biased coin and decide on either f* or f
+		else
+		{
+			
+		}
 	}//end runDiaconis
+
+	public boolean flipBiasedCoin(double ratio)
+	{
+		boolean heads = true;
+		return heads;
+	}//end flipBaiasedCoin
 
 	public void loadHashtable(String text, String ciphertext)
 	{
@@ -182,6 +213,7 @@ public class ps2
 		
 		ps2 decrypt = new ps2();
 		decrypt.loadHashtable("war_abridged.txt", "cipher.txt");
+		decrypt.runDiaconis(3);
 		//decrypt.generatePlausibility("cipher.txt");
 	}//end main	
 
