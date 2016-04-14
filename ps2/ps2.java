@@ -8,7 +8,9 @@ public class ps2
 		1. Read in text
 		2. Construct bigram with keys being 2 character and values in the set of [0, 1]	which are the probabilities of those two chars appearing
 		3. Construct key f using random permutation of characters
-		4. Construct Pl(f) by multiplying together M[f(Ci), f(Ci+1)] from beginning of cipher to end of cipher	
+		4. Construct ln(Pl(f)) by adding together M[f(Ci), f(Ci+1)] from beginning of cipher to end of cipher
+		5. Create new f* by swapping two values in f and calculating ln(Pl(f*))
+		6. After a set number of iterations, decode the cipher using the key f	
 	*/
 
 	Hashtable <String, Integer> bigram;
@@ -17,8 +19,7 @@ public class ps2
 	String c;
 	public ps2(String ciphertext)
 	{
-		bigram = new Hashtable <String, Integer>();
-		cipher = new Hashtable <String, Integer>();
+		bigram = new Hashtable <String, Integer>(1900);
 		c = "";
 		f = new char [27];
 		int alphabet = 97;
@@ -27,7 +28,6 @@ public class ps2
 		for (int t = 1; t < f.length; t++)
 		{
 			f[t] = (char)alphabet;
-			//System.out.println("Inserted " + f[t] + " into " + t);
 			alphabet++;
 		}
 		 
@@ -35,7 +35,7 @@ public class ps2
 		Random rand = new Random ();
 		for(int a = f.length - 1; a >= 1; a--)
 		{
-			int rshuffle = rand.nextInt(a + 1) + 1;
+			int rshuffle = rand.nextInt(a) + 1;
 			char temp = f[a];
 			f[a] = f[rshuffle];
 			f[rshuffle] = temp;
@@ -56,7 +56,7 @@ public class ps2
 	}//end constructor
 
 
-	public double generatePlausibility(String ciphertext, char [] key)
+	public double generatePlausibility(char [] key)
 	{
 		double plausibility = 0.00;
 		double p = 0.00;
@@ -88,24 +88,19 @@ public class ps2
 				m = c1 + c2;
 			}
 
-			//System.out.println("C1 is " + c1 + " C2 is " + c2);
 
 			//Now convert m into a probability value
 			if(bigram.containsKey(m))
 			{
-				//System.out.println("Value of " + m + " is " + (double)bigram.get(m)/bigram.size());
 				p = (double)bigram.get(m)/bigram.size();
 			}
 			else
 			{
-				//System.out.println("Not in hash table: " + (double)1/bigram.size());
 				p = (double)1/bigram.size();
 			}
 
 			plausibility += Math.log(p);
-			//System.out.println("Plausiblity is now: " + plausibility);
 		}//end  for(cip...
-			
 		return plausibility;
 	}//end generatePlausibility
 
@@ -119,18 +114,17 @@ public class ps2
 			char [] f_star = new char [27];
 			System.arraycopy(f, 0, f_star, 0, 27);
 			Random chooseSwap = new Random();
-			int swap = chooseSwap.nextInt(f_star.length) ;
-			int swap2 = chooseSwap.nextInt(f_star.length) ;
+			int swap = chooseSwap.nextInt(f_star.length - 1) + 1;
+			int swap2 = chooseSwap.nextInt(f_star.length - 1) + 1;
 
 			//Random permutation creates new f* to compare against f
 			char temp = f_star[swap];
 			f_star[swap] = f_star[swap2];
 			f_star[swap2] = temp;
-			//System.out.println("Switched " + swap + " with " + swap2);
 
-			double f1 = generatePlausibility("cipher.txt", f_star);
-			double f2 = generatePlausibility("cipher.txt", f);
-				
+			double f1 = generatePlausibility(f_star);
+			double f2 = generatePlausibility(f);
+			
 			//if Pl(f*) is better than original Pl(f), then take the f*
 			//else flip biased coin based on Pl(f*)/Pl(f) ratio to decide whether to take f* or f
 			if (f1 > f2)
@@ -144,26 +138,25 @@ public class ps2
 			else
 			{
 				//if coin flip is true, convert to f*
-				if(flipBiasedCoin(f1/f2))
+				if(!flipBiasedCoin(Math.exp(f1-f2)))
 				{
 					temp = f[swap];
 					f[swap] = f[swap2];
 					f[swap2] = temp;	
 				}
-			}//end else	
+			}//end else
 		}//end for
-		//System.out.println(Arrays.toString(f));
 	}//end runDiaconis
 
 	public boolean flipBiasedCoin(double ratio)
 	{
-		boolean heads = true;
 		double RAND_MAX = 32767;
 		Random rand = new Random();
-		double r = RAND_MAX * rand.nextDouble() % (double)RAND_MAX;
+		double r = RAND_MAX * rand.nextDouble() / (double)RAND_MAX;
 		return ( r <= ratio );
 	}//end flipBaiasedCoin
 	
+	//Method to decrypt the cipher message using the key f
 	public void exchangeLetters()
 	{
 		String final_message = "";
@@ -184,6 +177,7 @@ public class ps2
 		System.out.println(final_message);
 	}//end exchangeLetters
 
+	//Method to create bigram of corpus text using hash tables
 	public void loadHashtable(String text) {
 		String s = "";
 		File file = new File(text);
@@ -209,26 +203,6 @@ public class ps2
 				}
 			}
 			//System.out.println(bigram);
-			
-			//Making bigram for cipher
-			/*while(sc2.hasNext())
-			{
-				c += sc2.next() + " ";
-			}
-
-			for(int i = 0; i < c.length() - 1; i++)
-                        {
-                                String ctwo = c.substring(i, i + 2);
-                                if(cipher.containsKey(ctwo))
-                                {
-                                        cipher.put(ctwo, cipher.get(ctwo) + 1);
-                                }
-                                else 
-                                {
-                                        cipher.put(ctwo, 1);
-                                }
-                        }
-			//System.out.println("Cipher: " + cipher);*/
 		}//end try
 		catch(FileNotFoundException e){
 			System.out.println(text + " not found " + e);
@@ -236,15 +210,15 @@ public class ps2
 	}
 	public static void main(String [] args)
 	{
-		/*Scanner sc = new Scanner(System.in);
-		System.out.print("Enter text name: ");
-		String textFile = sc.next();*/
-		
-		ps2 decrypt = new ps2("cipher.txt");
-		decrypt.loadHashtable("war_abridged.txt");
-		decrypt.runDiaconis(100000);
+		Scanner sc = new Scanner(System.in);
+		System.out.print("Enter corpus file location and name: ");
+		String textFile = sc.next();
+		System.out.print("Enter cipher text location and name: ");
+		String cipherText = sc.next();	
+		ps2 decrypt = new ps2(cipherText);
+		decrypt.loadHashtable(textFile);
+		decrypt.runDiaconis(10000);
 		decrypt.exchangeLetters();
-		//decrypt.generatePlausibility("cipher.txt");
 	}//end main	
 
 }//end ps1
