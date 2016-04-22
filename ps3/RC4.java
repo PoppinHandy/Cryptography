@@ -59,11 +59,6 @@ public class RC4
 			}//end if
 
 		}//end for
-		
-		/*for (int count = 0; count < ptable.length; count++)
-		{
-			ptable[count] /= 256;
-		}//end for*/			
 	}//end generateKey
 
 	public void resetpTable()
@@ -80,22 +75,26 @@ public class RC4
 		RC4 encrypt = new RC4 ();
 		double [] finalpt = new double [10];
 	
-		//Using an iteration of 10000
-		for (int i = 0; i < 100000; i++)
+		//Using an iteration of 1000000
+		for (int i = 0; i < 1000000; i++)
 		{
+			//Random Key Generator
 			byte [] b = new byte [16];
 			new Random().nextBytes(b);
 			encrypt.generateKey(b);
+
+			//Adding to the probability array for averaging later
 			for (int counter = 0; counter < 10; counter++)
                 	{
                         	finalpt[counter] += encrypt.ptable[counter];
-                	}//end for  
+                	}//end for 
+			 
 			encrypt.resetpTable();
 		}//end for
 	
 		for (int counter = 0; counter < 10; counter++)
 		{
-			finalpt[counter] /= 100000;
+			finalpt[counter] /= 1000000;
 			System.out.println("The probability of " + counter + " is " + finalpt[counter]);	
 		}//end for	
 	}//end main
