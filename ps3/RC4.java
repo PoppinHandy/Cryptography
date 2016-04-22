@@ -36,34 +36,34 @@ public class RC4
 		//Generate Stream
 		j = 0;
 		int a = 0;
+		int k = 0;
 		for(int i = 0; i < 256; i++)
 		{
 			a = (a + 1) & 0xFF;
 			j = (j + stream[a]) & 0XFF;
 			byte temp = stream[a];
-                        stream[a] = stream[j];
-                        stream[j] = temp;
-			int k = stream[stream[a] + stream[j] & 0XFF] & 0xFF; //Have to convert int to unsigned byte using 0xFF
-			//System.out.println("K is: " + Integer.toHexString(k));
-
-			//Create probability table by splitting string into tokens and parsing them
-			String hexa = Integer.toHexString(k);
-			String [] second_byte = hexa.split("");
-			if(second_byte.length > 1 && second_byte[1].matches("[0-9]"))
-			{
-				ptable[Integer.parseInt(second_byte[1])] += 1;
-			}
-			else if((second_byte.length == 1) && second_byte[0].matches("[0-9]"))
-			{
-				ptable[Integer.parseInt(second_byte[0])] += 1;
-			}
+			stream[a] = stream[j];
+			stream[j] = temp;
+			k = stream[stream[a] + stream[j] & 0XFF] & 0xFF; //Have to convert int to unsigned byte using 0xFF
+		
+			//Second byte detection
+			if(i == 1)
+			{	
+				//Create probability table by splitting string into tokens and parsing them
+				String hexa = Integer.toHexString(k);
+				String [] second_byte = hexa.split("");
+				if((second_byte.length == 1) && second_byte[0].matches("[0-9]"))
+				{
+					ptable[Integer.parseInt(second_byte[0])] += 1;
+				}
+			}//end if
 
 		}//end for
-	
-		for (int count = 0; count < ptable.length; count++)
+		
+		/*for (int count = 0; count < ptable.length; count++)
 		{
 			ptable[count] /= 256;
-		}//end for			
+		}//end for*/			
 	}//end generateKey
 
 	public void resetpTable()
@@ -80,8 +80,8 @@ public class RC4
 		RC4 encrypt = new RC4 ();
 		double [] finalpt = new double [10];
 	
-		//Using an iteration of 1000000
-		for (int i = 0; i < 1000000; i++)
+		//Using an iteration of 10000
+		for (int i = 0; i < 100000; i++)
 		{
 			byte [] b = new byte [16];
 			new Random().nextBytes(b);
@@ -95,7 +95,7 @@ public class RC4
 	
 		for (int counter = 0; counter < 10; counter++)
 		{
-			finalpt[counter] /= 1000000;
+			finalpt[counter] /= 100000;
 			System.out.println("The probability of " + counter + " is " + finalpt[counter]);	
 		}//end for	
 	}//end main
